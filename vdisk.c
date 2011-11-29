@@ -370,7 +370,7 @@ int inttodate(struct DATE *date,unsigned int val)
   val>>=5;
   date->month=val&0x0F;
   val>>=4;
-  date->year=(val&03F) + 1970;
+  date->year=(val&0x3F) + 1970;
   return(1);
 }
   
