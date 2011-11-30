@@ -378,7 +378,7 @@ int inttodate(struct DATE *date,unsigned int val)
   return(1);
 }
 
-int bloqueasector[](int bloque)
+int bloqueasector(int bloque)
 {
 int sector[4]; 
 sector[0] = (518 + (bloque-1)*4);
