@@ -16,6 +16,9 @@ int secboot_en_memoria = 0;
 int blocksmap_en_memoria = 0;
 int blocksmap[13600];
 int mapa_bits_bloques;
+int mapa_bits_nodos_i;
+int nodesmap_en_memoria;
+int nodesmap[512];
 
 int vdwritesector(int drive, int head, int cylinder, int sector, int nsecs, char *buffer)
 {
@@ -388,4 +391,61 @@ sector[3] = (521 + (bloque-1)*4);
 return(sector);
 }
 
+int assignnode(int block)
+{
+	int offset = block/8;
+	int shift = block%8;
+	int result;
+	int i;
+	int sector;
 
+	if(!secboot_en_memoria)
+	{
+		result = vdreadsector(0,0,0,1,1, (char *) &secboot);
+		secboot_en_memoria = 1;
+	}
+	
+	mapa_bits_nodos_i = secboot.sec_res + 1 ;
+
+	if(!nodesmap_en_memoria)
+	{
+		for(i=0;i<secboot.sec_mapa_bits_nodos_i;i++)
+			result = vdreadseclog(mapa_bits_bloques+i, nodesmap+i*512);
+		nodesmap_en_memoria = 1;
+	}
+
+	nodesmap[offset]|=(1<<shift);
+
+	sector = (offset/512)*512;
+	vdwriteseclog(mapa_bits_nodos_i+sector, nodesmap+sector*512);
+
+	return(1);
+} 
+
+int isnodefree (int block)
+{
+	int offset = block/8;
+	int shift = block%8;
+	int result;
+	int i;
+
+	if(!secboot_en_memoria)
+	{
+		result = vdreadsector(0,0,0,1,1, (char *) &secboot);
+		secboot_en_memoria = 1;
+	}
+	
+	mapa_bits_nodos_i = secboot.sec_res;
+
+	if(!nodesmap_en_memoria)
+	{
+		for(i=0;i<secboot.sec_mapa_bits_nodos_i;i++)
+			result = vdreadseclog(mapa_bits_nodos_i+i, nodesmap+i*512);
+		nodesmap_en_memoria = 1;
+	}
+
+	if(nodesmap[offset] & (1<<shift))
+		return (0);
+	else
+		return(1);
+}
