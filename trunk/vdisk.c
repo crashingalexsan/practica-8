@@ -12,6 +12,10 @@ int currentcyl[4]={0,0,0,0};
 int currentsec[4]={0,0,0,0};
 
 struct SECBOOT secboot;
+int secboot_en_memoria = 0;
+int blocksmap_en_memoria = 0;
+int blocksmap[13600];
+int mapa_bits_bloques;
 
 int vdwritesector(int drive, int head, int cylinder, int sector, int nsecs, char *buffer)
 {
@@ -107,7 +111,7 @@ int vdreadsector(int drive, int head, int cylinder, int sector, int nsecs, char 
     return(nsecs);
 }
 
-int vdwritesl(int sec_log, char *buffer)
+int vdwriteseclog(int sec_log, char *buffer)
 {
     int drive = 0; 
     int head = (sec_log/SECXTRACK)%SUPERFICIES; 
@@ -160,7 +164,7 @@ int vdwritesl(int sec_log, char *buffer)
     return(nsecs);
 }
 
-int vdreadsl(int sec_log, char *buffer)
+int vdreadseclog(int sec_log, char *buffer)
 {
     int drive = 0; 
     int head = (sec_log/SECXTRACK)%SUPERFICIES; 
@@ -229,7 +233,7 @@ int assignblock(int block)
 	
 	mapa_bits_bloques = secboot.sec_res + secboot.sec_mapa_bits_nodos_i;
 
-	if(!blockmap_en_memoria)
+	if(!blocksmap_en_memoria)
 	{
 		for(i=0;i<secboot.sec_mapa_bits_bloques;i++)
 			result = vdreadseclog(mapa_bits_bloques+i, blocksmap+i*512);
@@ -260,7 +264,7 @@ int unassignblock(int block)
 	
 	mapa_bits_bloques = secboot.sec_res + secboot.sec_mapa_bits_nodos_i;
 
-	if(!blockmap_en_memoria)
+	if(!blocksmap_en_memoria)
 	{
 		for(i=0;i<secboot.sec_mapa_bits_bloques;i++)
 			result = vdreadseclog(mapa_bits_bloques+i, blocksmap+i*512);
@@ -290,7 +294,7 @@ int isblockfree (int block)
 	
 	mapa_bits_bloques = secboot.sec_res + secboot.sec_mapa_bits_nodos_i;
 
-	if(!blockmap_en_memoria)
+	if(!blocksmap_en_memoria)
 	{
 		for(i=0;i<secboot.sec_mapa_bits_bloques;i++)
 			result = vdreadseclog(mapa_bits_bloques+i, blocksmap+i*512);
@@ -316,7 +320,7 @@ int nextfreeblock()
 	
 	mapa_bits_bloques = secboot.sec_res + secboot.sec_mapa_bits_nodos_i;
 
-	if(!blockmap_en_memoria)
+	if(!blocksmap_en_memoria)
 	{
 		for(i=0;i<secboot.sec_mapa_bits_bloques;i++)
 			result = vdreadseclog(mapa_bits_bloques+i, blocksmap+i*512);
@@ -373,4 +377,15 @@ int inttodate(struct DATE *date,unsigned int val)
   date->year=(val&0x3F) + 1970;
   return(1);
 }
-  
+
+int bloqueasector[](int bloque)
+{
+int sector[4]; 
+sector[0] = (518 + (bloque-1)*4);
+sector[1] = (519 + (bloque-1)*4);
+sector[2] = (520 + (bloque-1)*4);  
+sector[3] = (521 + (bloque-1)*4);
+return(sector);
+}
+
+
