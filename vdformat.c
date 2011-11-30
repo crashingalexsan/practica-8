@@ -20,10 +20,12 @@ secboot.heads = 20;
 secboot.cyls = 160;
 secboot.secfis = 17;
 //secboot.codigoboot = ;
+secboot.sec_res = 1;
 
 printf("%d", sizeof(struct SECBOOT));
 
 vdwritesector(0,0,0,1,1,(char *) &secboot);
+assignblock(0);
 
 
 }
