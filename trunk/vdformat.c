@@ -4,11 +4,10 @@
 #include "vdisk.h"
 #include "tiposdato.h"
 
-struct SECBOOT secboot;
+extern struct SECBOOT secboot;
  
 int main()
 {
-
 //secboot.nombre_disco = "disco123";
 secboot.sec_superbloque = 1;
 secboot.sec_mapa_bits_nodos_i = 1;
@@ -26,6 +25,4 @@ printf("%d", sizeof(struct SECBOOT));
 
 vdwritesector(0,0,0,1,1,(char *) &secboot);
 assignblock(0);
-
-
 }
