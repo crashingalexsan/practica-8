@@ -11,14 +11,19 @@
 int currentcyl[4]={0,0,0,0};
 int currentsec[4]={0,0,0,0};
 
-struct SECBOOT secboot;
+extern struct SECBOOT secboot;
+
 int secboot_en_memoria = 0;
 int blocksmap_en_memoria = 0;
 int blocksmap[13600];
 int mapa_bits_bloques;
-int mapa_bits_nodos_i;
-int nodesmap_en_memoria;
+
+int nodesmap_en_memoria = 0;
 int nodesmap[512];
+int mapa_bits_nodos_i;
+
+int area_nodos;
+int area_archivos;
 
 int vdwritesector(int drive, int head, int cylinder, int sector, int nsecs, char *buffer)
 {
@@ -345,50 +350,42 @@ int nextfreeblock()
 	else
 		return (-1);
 }
+//--------------------------------------Nodos---------------------------------------
 
-unsigned int datetoint(struct DATE date)
+int nextfreenode()
 {
-unsigned int val=0;
+	int i,j;
+	int result;
 
-  val=date.year-1970;
-  val<<=4;
-  val|=date.month;
-  val<<=5;
-  val|=date.day;
-  val<<=5;
-  val|=date.hour;
-  val<<=6;
-  val|=date.min;
-  val<<=6;
-  val|date.sec;
-  
-  return(val);
-}
+	if(!secboot_en_memoria)
+	{
+		result = vdreadsector(0,0,0,1,1, (char *) &secboot);
+		secboot_en_memoria = 1;
+	}
+	
+	mapa_bits_nodos_i = secboot.sec_res;
 
-int inttodate(struct DATE *date,unsigned int val)
-{
-  date->sec=val&0x3F;
-  val>>=6;
-  date->min=val&0x3F;
-  val>>=6;
-  date->hour=val&0x1F;
-  val>>=5;
-  date->day=val&0x1F;
-  val>>=5;
-  date->month=val&0x0F;
-  val>>=4;
-  date->year=(val&0x3F) + 1970;
-  return(1);
-}
+	if(!nodesmap_en_memoria)
+	{
+		for(i=0;i<secboot.sec_mapa_bits_nodos_i;i++)
+			result = vdreadseclog(mapa_bits_nodos_i+i, nodesmap+i*512);
+		nodesmap_en_memoria = 1;
+	}
 
-int bloqueasector(int bloque)
-{
-int sector[4]; 
-sector[0] = (518 + (bloque-1)*4);
-sector[1] = (519 + (bloque-1)*4);
-sector[2] = (520 + (bloque-1)*4);  
-sector[3] = (521 + (bloque-1)*4);
-return(sector);
+	i=0;
+	while(nodesmap[i]==0xFF && 1<secboot.sec_mapa_bits_nodos_i*512)
+		i++;
+
+	if(i<secboot.sec_mapa_bits_nodos_i*512)
+	{
+		j=0;
+		while(nodesmap[i] & (1<<j) && j<8)
+			j++;
+
+		return (i*8+j);
+	}
+	else
+		return (-1);
 }
 
 int assignnode(int block)
@@ -449,3 +446,80 @@ int isnodefree (int block)
 	else
 		return(1);
 }
+
+////////////////////------------------------------------------////////////////////////////
+
+
+/////---------------------------Areas de disco----------------/////////////////////////
+int getmapabitsnodos()
+{
+mapa_bits_nodos_i = secboot.sec_res;
+return mapa_bits_nodos_i;
+}
+
+int getmapabitsdatos()
+{
+mapa_bits_bloques = secboot.sec_res + secboot.sec_mapa_bits_nodos_i;
+return mapa_bits_bloques;
+}
+
+int getareanodos()
+{
+area_nodos = secboot.sec_res + secboot.sec_mapa_bits_nodos_i + mapa_bits_bloques;
+return area_nodos;
+}
+
+int getareaarchivos()
+{
+area_archivos = secboot.sec_res + secboot.sec_mapa_bits_nodos_i + mapa_bits_bloques + area_nodos;
+return area_archivos;
+}
+
+/////////////////////////////////////////////////////////////////
+
+unsigned int datetoint(struct DATE date)
+{
+unsigned int val=0;
+
+  val=date.year-1970;
+  val<<=4;
+  val|=date.month;
+  val<<=5;
+  val|=date.day;
+  val<<=5;
+  val|=date.hour;
+  val<<=6;
+  val|=date.min;
+  val<<=6;
+  val|date.sec;
+  
+  return(val);
+}
+
+int inttodate(struct DATE *date,unsigned int val)
+{
+  date->sec=val&0x3F;
+  val>>=6;
+  date->min=val&0x3F;
+  val>>=6;
+  date->hour=val&0x1F;
+  val>>=5;
+  date->day=val&0x1F;
+  val>>=5;
+  date->month=val&0x0F;
+  val>>=4;
+  date->year=(val&0x3F) + 1970;
+  return(1);
+}
+
+int bloqueasector(int bloque)
+{
+int sector[4]; 
+sector[0] = (518 + (bloque-1)*4);
+sector[1] = (519 + (bloque-1)*4);
+sector[2] = (520 + (bloque-1)*4);  
+sector[3] = (521 + (bloque-1)*4);
+return(sector);
+}
+
+

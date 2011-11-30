@@ -12,7 +12,7 @@ struct SECBOOT {
 	unsigned char secfis;
 	unsigned short sec_res;
 	unsigned char codigoboot[486];
-};
+}secboot;
 
 struct INODE {
 
